@@ -2,10 +2,19 @@
 
 A/B Smartly - Android SDK
 
+## Architecture
+
+The A/B Smartly Android SDK is a **thin wrapper** around the [A/B Smartly Java SDK (core-api v1.6.0)](https://github.com/absmartly/java-sdk). All core functionality—including experiment evaluation, variant assignment, context management, event tracking, and HTTP client operations—is delegated to the Java SDK.
+
+The Android SDK provides only Android-specific components:
+- **SqliteAndroidLocalCache**: An Android-optimized local cache implementation using SQLite for persisting context data and publish events
+- Android-specific dependency management and configuration
+
+For all core functionality, testing, and API documentation, please refer to the [Java SDK repository](https://github.com/absmartly/java-sdk).
+
 ## Compatibility
 
 The A/B Smartly Android SDK is compatible with Android 5 and later (API level 21+).
-It uses [A/B Smartly - Java SDK.](https://github.com/absmartly/java-sdk)
 
 The `android.permission.INTERNET` permission is required. To add this permission to your application ensure the following line is present in the `AndroidManifest.xml` file:
 ```xml
@@ -31,21 +40,38 @@ When targeting Android 6.0 or earlier, the default Java Security Provider will n
 
 ## Usage
 
-The usage follows mainly the A/B Smartly Java SDK, but some Android components was created to help integrate faster with out Java SDK in Android Applications.
+The Android SDK follows the same API as the [A/B Smartly Java SDK](https://github.com/absmartly/java-sdk). Please refer to the Java SDK documentation for complete usage instructions, including:
+- SDK initialization and configuration
+- Creating and managing contexts
+- Evaluating treatments and running experiments
+- Tracking events and goals
+- Publishing events
 
-## Sqllite Local Cache Implementation
+### Android-Specific Components
 
-The usage of sqllite in Android Application is differente from Java Standard Applications then a specific implementation for Android is provided for this SDK. 
+#### SqliteAndroidLocalCache
 
-[SqliteAndroidLocalCache.java](https://github.com/absmartly/android-sdk/blob/main/android-sdk/src/main/java/com/absmartly/android/sdk/cache/SqliteAndroidLocalCache.java)
+The Android SDK provides an Android-optimized implementation of the `LocalCache` interface using SQLite. This is recommended for Android applications as it provides efficient persistence of context data and publish events.
 
-## Memory Local Cache Implementation
+**Usage:**
+```java
+import com.absmartly.android.sdk.cache.SqliteAndroidLocalCache;
 
-The Memory Cache component provide by [A/B Smartly Java SDK](https://github.com/absmartly/java-sdk) is compatible to be used in Android Applications if needed. 
+// Initialize the cache with your Android context
+LocalCache cache = new SqliteAndroidLocalCache(context);
 
-## A/B Smartly Java SDK Usage
+// Use the cache when configuring the SDK
+SDKConfig config = SDKConfig.create()
+    .setLocalCache(cache)
+    // ... other configuration
+    .build();
+```
 
-All details about how to use the [A/B Smartly Java SDK](https://github.com/absmartly/java-sdk) is in the java-sdk repository. 
+See [SqliteAndroidLocalCache.java](https://github.com/absmartly/android-sdk/blob/main/android-sdk/src/main/java/com/absmartly/android/sdk/cache/SqliteAndroidLocalCache.java) for implementation details.
+
+#### Alternative: Memory Cache
+
+The `MemoryCache` implementation provided by the Java SDK is also compatible with Android applications if you prefer an in-memory cache instead of SQLite persistence. 
 
 ## About A/B Smartly
 **A/B Smartly** is the leading provider of state-of-the-art, on-premises, full-stack experimentation platforms for engineering and product teams that want to confidently deploy features as fast as they can develop them.
