@@ -56,35 +56,37 @@ Please follow the [installation](#installation) instructions before trying the f
 
 This example assumes an API Key, an Application, and an Environment have been created in the A/B Smartly web console.
 
-#### Recommended: Builder Pattern
+#### Recommended: ABSmartlyAndroid Wrapper (Android Entry Point)
+
+`ABSmartlyAndroid` is the recommended Android entry point. It wires the Java SDK and the `SqliteAndroidLocalCache` together in a single step, so you don't need to configure each component separately.
 
 ```java
-import com.absmartly.sdk.*;
+import com.absmartly.android.sdk.ABSmartlyAndroid;
 
-final ABsmartly sdk = ABsmartly.builder()
+final ABSmartlyAndroid sdk = ABSmartlyAndroid.builder()
     .endpoint("https://your-company.absmartly.io/v1")
     .apiKey("YOUR-API-KEY")
     .application("android-app")
     .environment("production")
+    .context(getApplicationContext())
     .build();
 ```
 
-The builder pattern provides a clean, fluent API with named parameters. This is the recommended approach for initializing the SDK.
-
-#### With Optional Parameters
+Or using the static factory method:
 
 ```java
-final ABsmartly sdk = ABsmartly.builder()
-    .endpoint("https://your-company.absmartly.io/v1")
-    .apiKey("YOUR-API-KEY")
-    .application("android-app")
-    .environment("production")
-    .timeout(5000)
-    .retries(3)
-    .build();
+final ABSmartlyAndroid sdk = ABSmartlyAndroid.create(
+    "https://your-company.absmartly.io/v1",
+    "YOUR-API-KEY",
+    "android-app",
+    "production",
+    getApplicationContext()
+);
 ```
 
-#### Advanced Configuration
+`ABSmartlyAndroid` delegates `createContext`, `createContextWith`, and `close` to the underlying Java SDK and exposes `getCache()` to access the `SqliteAndroidLocalCache` directly. Call `getSdk()` to access the underlying `ABsmartly` Java SDK instance for advanced use cases.
+
+#### Advanced Configuration (Java SDK directly)
 
 For advanced use cases where you need full control over the Client and configuration:
 
@@ -105,9 +107,9 @@ final ABsmartlyConfig sdkConfig = ABsmartlyConfig.create()
 final ABsmartly sdk = ABsmartly.create(sdkConfig);
 ```
 
-#### Initializing with SqliteAndroidLocalCache
+#### Initializing with SqliteAndroidLocalCache manually
 
-The Android SDK provides a SQLite-backed local cache for persisting context data and publish events. This is recommended for Android applications to improve reliability across app restarts and network interruptions.
+If you are using the Java SDK directly and want to wire the SQLite cache yourself:
 
 ```java
 import com.absmartly.sdk.*;
@@ -393,31 +395,26 @@ Initialize the SDK once in your `Application` subclass so it is available throug
 
 ```java
 import android.app.Application;
-import com.absmartly.sdk.*;
+import com.absmartly.android.sdk.ABSmartlyAndroid;
 
 public class MyApplication extends Application {
 
-    private static ABsmartly absmartly;
+    private static ABSmartlyAndroid absmartly;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        final ClientConfig clientConfig = ClientConfig.create()
-            .setEndpoint("https://your-company.absmartly.io/v1")
-            .setAPIKey("YOUR-API-KEY")
-            .setApplication("android-app")
-            .setEnvironment("production");
-
-        final Client client = Client.create(clientConfig);
-
-        final ABsmartlyConfig sdkConfig = ABsmartlyConfig.create()
-            .setClient(client);
-
-        absmartly = ABsmartly.create(sdkConfig);
+        absmartly = ABSmartlyAndroid.builder()
+            .endpoint("https://your-company.absmartly.io/v1")
+            .apiKey("YOUR-API-KEY")
+            .application("android-app")
+            .environment("production")
+            .context(getApplicationContext())
+            .build();
     }
 
-    public static ABsmartly getAbsmartly() {
+    public static ABSmartlyAndroid getAbsmartly() {
         return absmartly;
     }
 }
