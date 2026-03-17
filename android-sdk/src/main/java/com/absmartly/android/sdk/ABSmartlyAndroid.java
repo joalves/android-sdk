@@ -14,6 +14,7 @@ import com.absmartly.sdk.json.ContextData;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Objects;
 
 public class ABSmartlyAndroid implements Closeable {
 
@@ -23,6 +24,11 @@ public class ABSmartlyAndroid implements Closeable {
             @NonNull String application,
             @NonNull String environment,
             @NonNull Context androidContext) {
+        Objects.requireNonNull(endpoint, "endpoint is required");
+        Objects.requireNonNull(apiKey, "apiKey is required");
+        Objects.requireNonNull(application, "application is required");
+        Objects.requireNonNull(environment, "environment is required");
+        Objects.requireNonNull(androidContext, "Android Context is required");
         return new ABSmartlyAndroid(endpoint, apiKey, application, environment, androidContext);
     }
 
@@ -76,10 +82,26 @@ public class ABSmartlyAndroid implements Closeable {
 
     @Override
     public void close() throws IOException {
+        IOException sdkException = null;
         try {
             sdk.close();
-        } finally {
+        } catch (IOException e) {
+            sdkException = e;
+        }
+        try {
             cache.close();
+        } catch (Exception e) {
+            if (sdkException != null) {
+                sdkException.addSuppressed(e);
+                throw sdkException;
+            }
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            }
+            throw new IOException(e);
+        }
+        if (sdkException != null) {
+            throw sdkException;
         }
     }
 

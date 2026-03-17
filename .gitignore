@@ -6,7 +6,5 @@ local.properties
 .DS_Store
 
 .claude/
-.DS_Store
 AUDIT_REPORT.md
 FIXES_IMPLEMENTED.md
-local.properties

@@ -1,6 +1,7 @@
 package com.absmartly.android.sdk;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 
 import com.absmartly.android.sdk.cache.SqliteAndroidLocalCache;
 import com.absmartly.sdk.json.ContextData;
@@ -190,5 +191,83 @@ public class SqliteAndroidLocalCacheTest {
         assertEquals(456, retrieved.experiments[0].id);
 
         newCache.close();
+    }
+
+    @Test
+    public void testDeserializeCorruptedEventDataSkipsInvalid() {
+        SQLiteDatabase db = cache.getWritableDatabase();
+        db.execSQL("INSERT INTO events (event) VALUES (?)", new Object[]{"not valid json{"});
+        db.execSQL("INSERT INTO events (event) VALUES (?)", new Object[]{"{\"hashed\":true,\"publishedAt\":1234,\"units\":[]}"});
+
+        List<PublishEvent> events = cache.retrievePublishEvents();
+
+        assertNotNull(events);
+        assertEquals(1, events.size());
+        assertTrue(events.get(0).hashed);
+    }
+
+    @Test
+    public void testDeserializeUnknownFieldsSucceeds() {
+        SQLiteDatabase db = cache.getWritableDatabase();
+        db.execSQL("INSERT INTO events (event) VALUES (?)",
+                new Object[]{"{\"hashed\":false,\"publishedAt\":5678,\"units\":[],\"unknownField\":\"value\"}"});
+
+        List<PublishEvent> events = cache.retrievePublishEvents();
+
+        assertNotNull(events);
+        assertEquals(1, events.size());
+        assertFalse(events.get(0).hashed);
+    }
+
+    @Test
+    public void testDeserializeEventWithNullFields() {
+        SQLiteDatabase db = cache.getWritableDatabase();
+        db.execSQL("INSERT INTO events (event) VALUES (?)",
+                new Object[]{"{\"hashed\":false,\"publishedAt\":0,\"units\":null}"});
+
+        List<PublishEvent> events = cache.retrievePublishEvents();
+
+        assertNotNull(events);
+        assertEquals(1, events.size());
+        assertNull(events.get(0).units);
+    }
+
+    @Test
+    public void testDeserializeCorruptedContextDataReturnsNull() {
+        SQLiteDatabase db = cache.getWritableDatabase();
+        db.execSQL("INSERT INTO context (context) VALUES (?)", new Object[]{"invalid json"});
+
+        ContextData retrieved = cache.getContextData();
+
+        assertNull(retrieved);
+    }
+
+    @Test
+    public void testWritePublishEventWithNullUnits() {
+        PublishEvent event = new PublishEvent();
+        event.hashed = true;
+        event.publishedAt = 42L;
+        event.units = null;
+
+        cache.writePublishEvent(event);
+
+        List<PublishEvent> events = cache.retrievePublishEvents();
+
+        assertNotNull(events);
+        assertEquals(1, events.size());
+        assertNull(events.get(0).units);
+    }
+
+    @Test
+    public void testWritePublishEventIsTransactional() {
+        PublishEvent event = new PublishEvent();
+        event.hashed = true;
+        event.publishedAt = 100L;
+        event.units = new Unit[0];
+
+        cache.writePublishEvent(event);
+
+        List<PublishEvent> events = cache.retrievePublishEvents();
+        assertEquals(1, events.size());
     }
 }

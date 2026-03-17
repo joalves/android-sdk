@@ -2,9 +2,6 @@ package com.absmartly.android.sdk;
 
 import android.content.Context;
 
-import com.absmartly.android.sdk.cache.SqliteAndroidLocalCache;
-
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,19 +14,10 @@ import static org.junit.Assert.*;
 public class ABSmartlyAndroidTest {
 
     private Context androidContext;
-    private SqliteAndroidLocalCache cache;
 
     @Before
     public void setUp() {
         androidContext = RuntimeEnvironment.getApplication();
-        cache = new SqliteAndroidLocalCache(androidContext);
-    }
-
-    @After
-    public void tearDown() {
-        if (cache != null) {
-            cache.close();
-        }
     }
 
     @Test
@@ -105,5 +93,42 @@ public class ABSmartlyAndroidTest {
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().contains("Context"));
         }
+    }
+
+    @Test
+    public void builder_allFieldsSet_returnsNonNull() {
+        ABSmartlyAndroid.Builder builder = ABSmartlyAndroid.builder()
+                .endpoint("https://test.absmartly.io/v1")
+                .apiKey("test-api-key")
+                .application("test-app")
+                .environment("test-env")
+                .context(androidContext);
+
+        assertNotNull(builder);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void create_nullEndpoint_throwsNullPointerException() {
+        ABSmartlyAndroid.create(null, "key", "app", "env", androidContext);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void create_nullApiKey_throwsNullPointerException() {
+        ABSmartlyAndroid.create("https://test.absmartly.io/v1", null, "app", "env", androidContext);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void create_nullApplication_throwsNullPointerException() {
+        ABSmartlyAndroid.create("https://test.absmartly.io/v1", "key", null, "env", androidContext);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void create_nullEnvironment_throwsNullPointerException() {
+        ABSmartlyAndroid.create("https://test.absmartly.io/v1", "key", "app", null, androidContext);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void create_nullContext_throwsNullPointerException() {
+        ABSmartlyAndroid.create("https://test.absmartly.io/v1", "key", "app", "env", null);
     }
 }
